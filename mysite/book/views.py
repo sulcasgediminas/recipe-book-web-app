@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.views.generic import ListView, DetailView
-from .models import Recipe
+from .models import Recipe, RecipeTag
 
 
 def index(request):
@@ -32,5 +32,11 @@ class RecipeDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         recipe = self.get_object()
         image = recipe.image_set.first()  # Get the first associated Image object
+        ingredients_used = recipe.recipeingredient_set.all()
+        tags = recipe.recipetag_set.all()  # Fetch tags associated with the recipe
+
+
         context['image'] = image
+        context['ingredients_used'] = ingredients_used
+        context['tags'] = tags # Include tags in the context
         return context

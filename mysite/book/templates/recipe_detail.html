@@ -12,11 +12,28 @@
 <body>
   <h1>{{ recipe.title }}</h1>
   <p>{{ recipe.description }}</p>
-  <p>{{ recipe.ingredients_used }}</p>
+
   <p>Instructions: {{ recipe.instructions }}</p>
+
+  <!-- <p>Debug: {{ ingredients_used }}</p> -->
+
+
+  <h4>Ingredients Used:</h4>
+  <ul>
+    {% for ingredient in ingredients_used %}
+      <li>{{ ingredient.ingredient.name }}</li>
+    {% endfor %}
+  </ul>
+
   <p>Cooking Time: {{ recipe.cooking_time }}</p>
   <p>Preparation time: {{ recipe.preparation_time }}</p>
-  <p>Tags:</p>
+
+  <h4>Tags:</h4>
+  <ul>
+    {% for tag in tags %}
+      <li>{{ tag.tag.name }}</li>
+    {% endfor %}
+  </ul>
   
   {% for cuisine in recipe.cuisines.all %}
     <p>Cuisine: {{ cuisine.name }}</p>

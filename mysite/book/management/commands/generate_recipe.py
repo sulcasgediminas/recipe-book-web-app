@@ -31,7 +31,7 @@ class Command(BaseCommand):
         # Randomly select one cuisine
         cuisine = random.choice(Cuisine.objects.all())
 
-        prompt = f"## Generate Food Recipe\n\nIngredients: {', '.join(ingredient.name for ingredient in ingredients)} plus add as many ingredients so dish would be deliciuos\n\nCuisine: {cuisine.name}\n\nInstructions:"
+        prompt = f"## Generate Food Recipe\n\n Use ingredients: {', '.join(ingredient.name for ingredient in ingredients)} plus add as many ingredients so dish would be deliciuos\n\nInspired by Cuisine: {cuisine.name}\n\n"
         response = openai.Completion.create(
             engine='text-davinci-003',
             prompt=prompt,
@@ -83,12 +83,23 @@ class Command(BaseCommand):
 
         response = openai.Completion.create(
             engine='text-davinci-003',
-            prompt=f"## Generate Recipe Preparation Time:\n\nInstructions: {recipe_text}\n",
+            prompt=f"## Generate Recipe Preparation Time From: {recipe_text}\n",
             max_tokens=128,
             temperature=0.3,
             n=1
         )
         preparation_time = response.choices[0].text.strip()
+
+
+        response = openai.Completion.create(
+            engine='text-davinci-003',
+            prompt=f"## Generate Tags for recipe From: {recipe_text}. Add '#' before every tag.\n",
+            max_tokens=128,
+            temperature=0.3,
+            n=1
+        )
+        tags = response.choices[0].text.strip()
+        
 
         response = openai.Completion.create(
             engine='text-davinci-003',
@@ -99,14 +110,93 @@ class Command(BaseCommand):
         )
         total_time = response.choices[0].text.strip()
 
+
+
+
+
+
+
+        # Use OpenAI API to process the text and extract ingredients
         response = openai.Completion.create(
-            engine='text-davinci-003',
-            prompt=f"## Generate ingredients used in recipe:\n\nInstructions: {recipe_text}\n",
-            max_tokens=256,
-            temperature=0.3,
-            n=1
+            engine="text-davinci-003",
+            prompt=f"Extract a list of ingredients from the following text:\n\n{recipe_text}\n. Do not add any additional information such as measurement or condition",
+            max_tokens=128,
+            temperature=0.1,
+            n=1,
+            # stop=["-"],  # Stop generation after "-" to capture each ingredient line
         )
-        ingredients_used = response.choices[0].text.strip()
+
+        # Extract the generated text from the response
+        extracted_ingredients = response.choices[0].text.strip()
+
+        # Split the extracted text into a list of ingredients
+        ingredient_list = [line.strip() for line in extracted_ingredients.split("\n") if line.strip()]
+
+                # Print the list of pure ingredients
+        if not ingredient_list:
+            print("No ingredients extracted.")
+        else:
+            print("Extracted ingredients:")
+            for ingredient_text in ingredient_list:
+                print(f"Ingredient: '{ingredient_text}'")
+
+        # # Create a new recipe instance
+        recipe = Recipe.objects.create(
+            title=title,
+            description=description,
+            instructions=recipe_text,
+            # cooking_time=None,
+            # difficulty_level=difficulty_level,
+            # servings=servings,
+            preparation_time=preparation_time,
+            # total_time=total_time
+        )
+        recipe.cuisines.set([cuisine])
+
+                # Print the number of ingredients found
+        print(f"Number of extracted ingredients: {len(ingredient_list)}")
+
+
+        # recipe.save()
+
+        # Print the list of pure ingredients
+        for ingredient_text in ingredient_list:
+
+            ingredient_text = ingredient_text.replace("- ", "")
+  
+            ingredient_text = ingredient_text.title()
+
+
+            matching_ingredients = Ingredient.objects.filter(name=ingredient_text)
+
+            if matching_ingredients.exists():
+                # If multiple matching ingredients are found, choose the first one
+                ingredient_obj = matching_ingredients.first()
+            else:
+                # If no matching ingredient is found, create a new one
+                ingredient_obj, created = Ingredient.objects.get_or_create(name=ingredient_text)
+
+
+            # Create a RecipeIngredient instance to associate the ingredient with the recipe
+            # You can adjust the quantity and unit_of_measurement as needed
+            recipe_ingredient, created = RecipeIngredient.objects.get_or_create(
+                recipe=recipe,
+                ingredient=ingredient_obj,
+                quantity=1,  # Adjust as needed
+                unit_of_measurement='unit',  # Adjust as needed
+            )
+
+            # Print a message indicating the ingredient was added to the recipe (optional)
+            if created:
+                print(f"Added ingredient '{ingredient_text}' to the recipe.")
+
+
+
+
+
+
+
+
 
         # Generate the image using the OpenAI API
         response = openai.Image.create(
@@ -121,21 +211,26 @@ class Command(BaseCommand):
         image_content = image_response.content
         image_base64 = base64.b64encode(image_content).decode("utf-8")
 
-        # Create a new recipe instance
-        recipe = Recipe.objects.create(
-            title=title,
-            description=description,
-            instructions=recipe_text,
-            # cooking_time=None,
-            # difficulty_level=difficulty_level,
-            # servings=servings,
-            # preparation_time=preparation_time,
-            # total_time=total_time
-        )
-        recipe.cuisines.set([cuisine])
 
-        # Create a ingredients_used instance
-        # ingredients_used = RecipeIngredient.objects.create(ingredient=ingredients_used)
+
+        # # Create a new recipe instance
+        # recipe = Recipe.objects.create(
+        #     title=title,
+        #     description=description,
+        #     instructions=recipe_text,
+        #     # cooking_time=None,
+        #     # difficulty_level=difficulty_level,
+        #     # servings=servings,
+        #     preparation_time=preparation_time,
+        #     # total_time=total_time
+        # )
+        # recipe.cuisines.set([cuisine])
+
+        # Create a RecipeTag instance for the generated Tag and associate it with the Recipe
+        tag_obj, created = Tag.objects.get_or_create(name=tags)
+        tags = RecipeTag.objects.create(recipe=recipe, tag=tag_obj)
+
+       
 
         # After generating the image URL using the OpenAI API
         image = Image.objects.create(recipe=recipe)

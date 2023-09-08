@@ -24,7 +24,7 @@ class Recipe(models.Model):
     )
     difficulty_level = models.CharField(max_length=10, choices=difficulty_levels)
     servings = models.CharField(max_length=255, null=True, blank=True)
-    preparation_time = models.DurationField(null=True)
+    preparation_time = models.CharField(max_length=255, null=True, blank=True)
     total_time = models.DurationField(null=True)
     average_rating = models.DecimalField(max_digits=3, decimal_places=2, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
