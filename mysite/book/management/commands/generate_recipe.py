@@ -1,3 +1,7 @@
+##############################################
+# Import necessary modules
+##############################################
+
 from django.conf import settings
 import random
 import openai
@@ -9,7 +13,10 @@ from book.models import Ingredient, Cuisine, Recipe, Image, RecipeTag, Tag, Reci
 from django.core.management.base import BaseCommand
 from django.core.files.base import ContentFile
 
+############################################################################################
 # dotenv_path = os.path.join(os.path.dirname(__file__), 'project_recipes/.env')
+############################################################################################
+
 load_dotenv()
 
 openai.api_key = os.getenv('OPENAI_API_KEY')
@@ -43,6 +50,8 @@ class Command(BaseCommand):
         )
         recipe_text = response.choices[0].text.strip().replace('\n', ' ')
 
+        print(recipe_text)
+
         # Generate dynamic values using OpenAI API
         response = openai.Completion.create(
             engine='text-davinci-003',
@@ -57,16 +66,34 @@ class Command(BaseCommand):
             engine='text-davinci-003',
             prompt=f"## Generate Recipe Description:\n\nUse this text to generate Description (Description is few sentences about recipe. How recipe was inspired. Who might like it, etc.): {recipe_text}\n",
             max_tokens=500,
-            temperature=0.7,
+            temperature=0.8,
             n=1
         )
         description = response.choices[0].text.strip()
+
+
+############################################################################################
+# Use OpenAI API to process the text and extract description
+############################################################################################
+
+        response = openai.Completion.create(
+            engine='text-davinci-003',
+            prompt=f"Extract full instruction of recipe's preparation from the following text:\n\n{recipe_text}\n. Do not include or do not add 'Instructions' at the beginning. (I will set up Instructions block manully)",
+            max_tokens=500,
+            temperature=0.4,
+            n=1
+        )
+        instruction = response.choices[0].text.strip()
+
+
+
+
 
         response = openai.Completion.create(
             engine='text-davinci-003',
             prompt=f"## Generate Recipe Difficulty Level:\n\nUse this text to generate difficulty: {recipe_text}\n",
             max_tokens=128,
-            temperature=0.3,
+            temperature=0.2,
             n=1
         )
         difficulty_level = response.choices[0].text.strip()
@@ -83,9 +110,9 @@ class Command(BaseCommand):
 
         response = openai.Completion.create(
             engine='text-davinci-003',
-            prompt=f"## Generate Recipe Preparation Time From: {recipe_text}\n",
-            max_tokens=128,
-            temperature=0.3,
+            prompt=f"Generate recipe's preparation time from description: {recipe_text}. Provide me only integer/number in minutes",
+            max_tokens=32,
+            temperature=0.1,
             n=1
         )
         preparation_time = response.choices[0].text.strip()
@@ -144,7 +171,7 @@ class Command(BaseCommand):
         recipe = Recipe.objects.create(
             title=title,
             description=description,
-            instructions=recipe_text,
+            instructions=instruction,
             # cooking_time=None,
             # difficulty_level=difficulty_level,
             # servings=servings,
@@ -200,8 +227,8 @@ class Command(BaseCommand):
 
         # Generate the image using the OpenAI API
         response = openai.Image.create(
-            prompt=f'Generate an image of {title}.',
-            size="256x256",
+            prompt=f'Portrait of michelin-star {title}. Tasty, incredibly detailed, sharpen, professional food lighting. Professional food photography, captivating, rule of thirds, majestic, octane render.',
+            size="512x512",
             n=1,
         )
 
