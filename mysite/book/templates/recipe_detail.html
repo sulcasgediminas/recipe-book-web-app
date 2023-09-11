@@ -1,7 +1,41 @@
 <!-- recipe_detail.html -->
-
 <!DOCTYPE html>
 <html>
+
+<style>
+  .inline-heading {
+    display: inline-block;
+  }
+
+  body {
+    margin: 0 25%; /* Adjust the margin as per your preference */
+  }
+
+  /* Create a flex container for the two columns */
+  .flex-container {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* Style the columns */
+  .column {
+    flex-basis: 48%; /* Adjust the width of each column */
+    margin: 5%;
+  }
+
+  /* Style the image container */
+  .image-container {
+    max-width: 100%; /* Ensure the image container doesn't exceed its parent's width */
+    margin: 25px;
+  }
+
+  /* Style the image to scale with its container while maintaining aspect ratio */
+  .recipe-image {
+
+    margin: 5%;
+  }
+</style>
+
 <head>
   <title>Recipe Detail</title>
   <style>
@@ -9,37 +43,50 @@
     /* Add your custom CSS styles to customize the appearance */
   </style>
 </head>
+
 <body>
   <h1>{{ recipe.title }}</h1>
-  <p>{{ recipe.description }}</p>
+  <p class="column">{{ recipe.description }}</p>
 
-  <p>Instructions: {{ recipe.instructions }}</p>
+  <div class="flex-container">
+    <div class="column">
+      <h4>Ingredients Used:</h4>
+      <ul>
+        {% for ingredient in ingredients_used %}
+        <li>{{ ingredient.ingredient.name }}</li>
+        {% endfor %}
+      </ul>
+    </div>
 
-  <!-- <p>Debug: {{ ingredients_used }}</p> -->
+    <div class="column">
+      <h4>Instructions:</h4>
+      {{ recipe.instructions }}
+    </div>
+  </div>
 
+  <!-- <p>Cooking Time: {{ recipe.cooking_time }}</p> -->
 
-  <h4>Ingredients Used:</h4>
-  <ul>
-    {% for ingredient in ingredients_used %}
-      <li>{{ ingredient.ingredient.name }}</li>
-    {% endfor %}
-  </ul>
+  <h4 class="inline-heading">Preparation time:</h4> {{ recipe.preparation_time }}
 
-  <p>Cooking Time: {{ recipe.cooking_time }}</p>
-  <p>Preparation time: {{ recipe.preparation_time }}</p>
-
-  <h4>Tags:</h4>
-  <ul>
-    {% for tag in tags %}
-      <li>{{ tag.tag.name }}</li>
-    {% endfor %}
-  </ul>
-  
+  <br>
+  <h4 class="inline-heading">Cuisine:</h4>
   {% for cuisine in recipe.cuisines.all %}
-    <p>Cuisine: {{ cuisine.name }}</p>
+  {{ cuisine.name }}
   {% endfor %}
-  <p>{{ recipe.servings }}</p>
-  <img src="{{ image.image_file.url }}">
+  <br>
+
+  <!-- Wrap the image in a container to control its scaling -->
+  <div class="image-container">
+    <img class="recipe-image" src="{{ image.image_file.url }}">
+  </div>
+
   <!-- Display other recipe fields as needed -->
+
+  <br>
+  <h4 class="inline-heading">Tags:</h4>
+  {% for tag in tags %}
+  {{ tag.tag.name }}
+  {% endfor %}
 </body>
+
 </html>
